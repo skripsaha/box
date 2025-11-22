@@ -88,8 +88,8 @@ void scheduler_add_process(process_t* proc) {
 
     proc->state = PROCESS_STATE_READY;
 
-    kprintf("[SCHEDULER] Added process PID=%lu to ready queue (count=%d)\n",
-            proc->pid, ready_queue_count);
+    kprintf("[SCHEDULER] Added process at 0x%p, PID=%lu to ready queue (count=%d, slot=%d)\n",
+            proc, proc->pid, ready_queue_count, ready_queue_tail - 1);
 }
 
 // Remove process from ready queue
@@ -137,6 +137,31 @@ process_t* scheduler_pick_next(void) {
     ready_queue_head = (ready_queue_head + 1) % PROCESS_MAX_COUNT;
     ready_queue_count--;
 
+    // ========================================================================
+    // CRITICAL FIX: Validate process before returning
+    // ========================================================================
+    // Protection against dangling pointers and invalid processes
+    if (!next) {
+        kprintf("[SCHEDULER] ERROR: NULL process in ready queue at index %d!\n",
+                (ready_queue_head - 1 + PROCESS_MAX_COUNT) % PROCESS_MAX_COUNT);
+        return NULL;
+    }
+
+    // Check if process is valid (PID > 0 and state != 0)
+    if (next->pid == 0 || next->state == 0) {
+        kprintf("[SCHEDULER] ERROR: Invalid process in ready queue!\n");
+        kprintf("[SCHEDULER]   Address: 0x%p, PID=%lu, state=%d\n",
+                next, next->pid, next->state);
+        return NULL;
+    }
+
+    // Check if process is in a schedulable state
+    if (next->state == PROCESS_STATE_ZOMBIE) {
+        kprintf("[SCHEDULER] WARNING: ZOMBIE process PID=%lu in ready queue, skipping\n",
+                next->pid);
+        return NULL;
+    }
+
     return next;
 }
 
@@ -164,14 +189,21 @@ void scheduler_yield_cooperative(interrupt_frame_t* frame) {
         scheduler_add_process(current);
     } else if (current->state == PROCESS_STATE_ZOMBIE) {
         kprintf("[SCHEDULER] Process PID=%lu ZOMBIE - cleaning up resources\n", current->pid);
+        kprintf("[SCHEDULER] Ready queue before cleanup: count=%d\n", ready_queue_count);
+
         // Free process resources (we're in kernel context, safe to cleanup)
         extern void process_destroy(process_t* proc);
         process_destroy(current);
         process_set_current(NULL);  // Clear current process
+
+        kprintf("[SCHEDULER] Process destroyed, picking next from ready queue...\n");
+
         // Process destroyed, check if there are other processes
         process_t* next = scheduler_pick_next();
         if (next) {
             // Switch to next process
+            kprintf("[SCHEDULER] Next process: 0x%p, PID=%lu, state=%d\n",
+                    next, next->pid, next->state);
             scheduler_restore_context(next, frame);
             next->state = PROCESS_STATE_RUNNING;
             process_set_current(next);
