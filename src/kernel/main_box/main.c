@@ -214,6 +214,7 @@ void kernel_main(e820_entry_t* e820_map, uint64_t e820_count, uint64_t mem_start
         panic("Failed to create process 1!");
     }
     kprintf("[KERNEL] Process 1 created (PID=%lu)\n", proc1->pid);
+    kprintf("[KERNEL_DEBUG] proc1=0x%p, PID=%lu, state=%d\n", proc1, proc1->pid, proc1->state);
 
     // Create SECOND process (concurrent test)
     kprintf("[KERNEL] Creating Process 2 (Concurrent test, %u bytes)...\n",
@@ -224,6 +225,8 @@ void kernel_main(e820_entry_t* e820_map, uint64_t e820_count, uint64_t mem_start
         panic("Failed to create process 2!");
     }
     kprintf("[KERNEL] Process 2 created (PID=%lu)\n", proc2->pid);
+    kprintf("[KERNEL_DEBUG] proc1=0x%p, PID=%lu, state=%d (RECHECK!)\n", proc1, proc1->pid, proc1->state);
+    kprintf("[KERNEL_DEBUG] proc2=0x%p, PID=%lu, state=%d\n", proc2, proc2->pid, proc2->state);
 
     // Create THIRD process (concurrent test)
     kprintf("[KERNEL] Creating Process 3 (Concurrent test, %u bytes)...\n",
@@ -234,6 +237,9 @@ void kernel_main(e820_entry_t* e820_map, uint64_t e820_count, uint64_t mem_start
         panic("Failed to create process 3!");
     }
     kprintf("[KERNEL] Process 3 created (PID=%lu)\n", proc3->pid);
+    kprintf("[KERNEL_DEBUG] proc1=0x%p, PID=%lu, state=%d (RECHECK!)\n", proc1, proc1->pid, proc1->state);
+    kprintf("[KERNEL_DEBUG] proc2=0x%p, PID=%lu, state=%d (RECHECK!)\n", proc2, proc2->pid, proc2->state);
+    kprintf("[KERNEL_DEBUG] proc3=0x%p, PID=%lu, state=%d\n", proc3, proc3->pid, proc3->state);
 
     kprintf("\n[KERNEL] All 3 processes created successfully!\n");
     kprintf("[KERNEL] Starting multi-process concurrent execution...\n\n");
