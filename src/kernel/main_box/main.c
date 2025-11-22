@@ -238,6 +238,15 @@ void kernel_main(e820_entry_t* e820_map, uint64_t e820_count, uint64_t mem_start
     kprintf("\n[KERNEL] All 3 processes created successfully!\n");
     kprintf("[KERNEL] Starting multi-process concurrent execution...\n\n");
 
+    // ========================================================================
+    // DEBUG: Verify process pointers before adding to scheduler
+    // ========================================================================
+    kprintf("[DEBUG] Process pointers after creation:\n");
+    kprintf("[DEBUG]   proc1 = 0x%p, PID=%lu, state=%d\n", proc1, proc1->pid, proc1->state);
+    kprintf("[DEBUG]   proc2 = 0x%p, PID=%lu, state=%d\n", proc2, proc2->pid, proc2->state);
+    kprintf("[DEBUG]   proc3 = 0x%p, PID=%lu, state=%d\n", proc3, proc3->pid, proc3->state);
+    kprintf("\n");
+
     // Add all processes to scheduler ready queue
     extern void scheduler_add_process(process_t* proc);
     scheduler_add_process(proc1);
