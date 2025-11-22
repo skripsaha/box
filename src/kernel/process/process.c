@@ -35,9 +35,11 @@ void process_init(void) {
 process_t* process_create(void* code, uint64_t code_size, uint64_t entry_offset) {
     // Find free slot
     process_t* proc = 0;
+    int slot_index = -1;
     for (int i = 0; i < PROCESS_MAX_COUNT; i++) {
         if (process_table[i].state == 0) {
             proc = &process_table[i];
+            slot_index = i;
             break;
         }
     }
@@ -47,9 +49,14 @@ process_t* process_create(void* code, uint64_t code_size, uint64_t entry_offset)
         return 0;
     }
 
+    kprintf("[PROCESS_DEBUG] Found free slot=%d at address=0x%p\n", slot_index, proc);
+
     // Initialize process structure
     proc->pid = next_pid++;
     proc->state = PROCESS_STATE_READY;
+
+    kprintf("[PROCESS_DEBUG] Initialized slot=%d, PID=%lu, state=%d, address=0x%p\n",
+            slot_index, proc->pid, proc->state, proc);
 
     // Allocate user stack (16KB)
     uint64_t stack_pages = USER_STACK_SIZE / PMM_PAGE_SIZE;
@@ -224,6 +231,9 @@ process_t* process_create(void* code, uint64_t code_size, uint64_t entry_offset)
     kprintf("[PROCESS]     EventRing: kernel=0x%p\n", proc->event_ring);
     kprintf("[PROCESS]     ResultRing: kernel=0x%p\n", proc->result_ring);
     kprintf("[PROCESS]   CS: 0x%04x, SS: 0x%04x\n", proc->cs, proc->ss);
+
+    kprintf("[PROCESS_DEBUG] Before return: slot=%d, PID=%lu, state=%d, address=0x%p\n",
+            slot_index, proc->pid, proc->state, proc);
 
     return proc;
 }
